@@ -4,10 +4,6 @@ import React from 'react';
 import Router from 'react-routing/src/Router';
 import http from './core/HttpClient';
 import App from './components/App';
-import ContentPage from './components/ContentPage';
-import ContactPage from './components/ContactPage';
-import LoginPage from './components/LoginPage';
-import RegisterPage from './components/RegisterPage';
 import NotFoundPage from './components/NotFoundPage';
 import ErrorPage from './components/ErrorPage';
 
@@ -17,14 +13,60 @@ const router = new Router(on => {
     return component && <App context={state.context}>{component}</App>;
   });
 
-  on('/contact', async () => <ContactPage />);
+  on('/contact', async () => {
+    let ContactPage;
+    require.ensure([], ()=> { // this syntax is weird but it works
+      ContactPage = require('./components/ContactPage');
+    });
 
-  on('/login', async () => <LoginPage />);
+    await Promise.all([
+      new Promise(resolve => require.ensure(['./components/ContactPage'], resolve)),
+    ]);
+    return <ContactPage />;
+  });
 
-  on('/register', async () => <RegisterPage />);
+  on('/login', async () => {
+    let LoginPage;
+    require.ensure([], ()=> { // this syntax is weird but it works
+      LoginPage = require('./components/LoginPage');
+    });
+
+    await Promise.all([
+      new Promise(resolve => require.ensure(['./components/LoginPage'], resolve)),
+    ]);
+    return <LoginPage />;
+  });
+
+  on('/register', async () => {
+    let RegisterPage;
+    require.ensure([], ()=> { // this syntax is weird but it works
+      RegisterPage = require('./components/RegisterPage');
+    });
+
+    await Promise.all([
+      new Promise(resolve => require.ensure(['./components/RegisterPage'], resolve)),
+    ]);
+    return <RegisterPage />;
+  });
+
+  // on('/products', async () => {
+  //   const [data, require] = await Promise.all([
+  //     http.get('/api/products'),
+  //     new Promise(resolve => require.ensure(['./components/ProductsPage'], resolve)),
+  //   ]);
+  //   const ProductsPage = require('./components/ProductsPage');
+  //   return data ? <ProductsPage products={data} /> : undefined;
+  // });
 
   on('*', async (state) => {
-    const content = await http.get(`/api/content?path=${state.path}`);
+    let ContentPage;
+    require.ensure([], ()=> { // this syntax is weird but it works
+      ContentPage = require('./components/ContentPage');
+    });
+    const [content] = await Promise.all([
+      http.get(`/api/content/?path=${state.path}`),
+      new Promise(resolve => require.ensure(['./components/ContentPage'], resolve)),
+    ]);
     return content && <ContentPage {...content} />;
   });
 
